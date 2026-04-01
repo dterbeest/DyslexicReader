@@ -1,9 +1,16 @@
 import { useState, useRef } from 'react'
 import FileUpload from './components/FileUpload'
 import SettingsPanel from './components/SettingsPanel'
-import OpenDyslexicInfo from './components/OpenDyslexicInfo'
+import FontInfo from './components/FontInfo'
 import { useSettings } from './hooks/useSettings'
+import type { FontFamily } from './hooks/useSettings'
 import { convertFile, ConvertError } from './api/convert'
+
+const FONT_FAMILY_CSS: Record<FontFamily, string> = {
+  opendyslexic: 'var(--font-od)',
+  lexend:       'var(--font-lexend)',
+  atkinson:     'var(--font-atkinson)',
+}
 
 type Phase = 'idle' | 'converting' | 'done' | 'error'
 
@@ -67,7 +74,7 @@ export default function App() {
     <div className="app">
 
       <header className="hdr anim-1">
-        <div className="wordmark">DyslexicReader</div>
+        <div className="wordmark" style={{ fontFamily: FONT_FAMILY_CSS[settings.font_family] }}>DyslexicReader</div>
         <p className="hdr-tagline">
           Convert any image or PDF into a comfortable,<br />
           dyslexia-friendly document in seconds.
@@ -172,7 +179,7 @@ export default function App() {
           </div>
         </div>
 
-        <OpenDyslexicInfo />
+        <FontInfo fontFamily={settings.font_family} />
 
       </main>
 

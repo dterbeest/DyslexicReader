@@ -1,4 +1,4 @@
-import type { Settings, FontSize, LineSpacing, BgColor, Language } from '../hooks/useSettings'
+import type { Settings, FontSize, LineSpacing, BgColor, Language, FontFamily } from '../hooks/useSettings'
 
 interface Props {
   settings: Settings
@@ -13,9 +13,34 @@ const BG_COLORS: { value: BgColor; label: string; hex: string }[] = [
   { value: 'blue',   label: 'Blue',   hex: '#D0E8FF' },
 ]
 
+const FONT_FAMILIES: { value: FontFamily; label: string }[] = [
+  { value: 'opendyslexic', label: 'OpenDyslexic' },
+  { value: 'lexend',       label: 'Lexend'        },
+  { value: 'atkinson',     label: 'Atkinson'      },
+]
+
 export default function SettingsPanel({ settings, onChange, disabled = false }: Props) {
   return (
     <div className={`settings-grid${disabled ? ' settings-grid--disabled' : ''}`}>
+
+      <div className="setting-row">
+        <div className="setting-label">Font</div>
+        <div className="seg" role="radiogroup" aria-label="Font">
+          {FONT_FAMILIES.map(({ value, label }) => (
+            <div className="seg-item" key={value}>
+              <input
+                type="radio"
+                id={`ff-${value}`}
+                name="font_family"
+                checked={settings.font_family === value}
+                onChange={() => onChange('font_family', value)}
+                disabled={disabled}
+              />
+              <label htmlFor={`ff-${value}`}>{label}</label>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="setting-row">
         <div className="setting-label">Font size</div>
