@@ -41,8 +41,6 @@ def _ocr_image_bytes(contents: bytes, lang: str) -> str:
 
 
 _TESS_CONFIG = "--oem 1 --psm 6"
-# Minimum word confidence (0–100) — words below this are treated as OCR noise.
-_MIN_WORD_CONFIDENCE = 30
 # Minimum extracted words from pdfplumber to trust digital text over OCR.
 _MIN_DIGITAL_WORDS = 20
 
@@ -78,8 +76,8 @@ def _reconstruct_paragraphs(data: dict) -> str:
         par = data["par_num"][i]
         line = data["line_num"][i]
 
-        # Skip empty tokens, Tesseract layout markers, or low-confidence words
-        if not word.strip() or conf == -1 or int(conf) < _MIN_WORD_CONFIDENCE:
+        # Skip empty tokens or Tesseract layout markers (conf == -1)
+        if not word.strip() or conf == -1:
             continue
 
         # Detect paragraph boundary
