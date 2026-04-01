@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import type { DragEvent, ChangeEvent } from 'react'
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
-const ACCEPTED_EXT = '.jpg,.jpeg,.png,.pdf'
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024   // 10 MB
-const MAX_PDF_BYTES   = 25 * 1024 * 1024   // 25 MB
+const ACCEPTED_TYPES  = ['image/jpeg', 'image/png', 'application/pdf']
+const ACCEPTED_EXT    = '.jpg,.jpeg,.png,.pdf'
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_PDF_BYTES   = 25 * 1024 * 1024
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -12,14 +12,11 @@ function formatBytes(bytes: number): string {
 }
 
 function validate(file: File): string | null {
-  if (!ACCEPTED_TYPES.includes(file.type)) {
+  if (!ACCEPTED_TYPES.includes(file.type))
     return 'Only JPG, PNG, and PDF files are accepted.'
-  }
   const limit = file.type === 'application/pdf' ? MAX_PDF_BYTES : MAX_IMAGE_BYTES
-  if (file.size > limit) {
-    const label = file.type === 'application/pdf' ? '25 MB' : '10 MB'
-    return `File is too large. Maximum size for this file type is ${label}.`
-  }
+  if (file.size > limit)
+    return `File is too large. Maximum is ${file.type === 'application/pdf' ? '25 MB' : '10 MB'}.`
   return null
 }
 
@@ -30,9 +27,9 @@ interface Props {
 
 export default function FileUpload({ onFileSelected, disabled = false }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
+  const [dragging, setDragging]         = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]               = useState<string | null>(null)
 
   function handleFile(file: File) {
     const err = validate(file)
@@ -50,7 +47,6 @@ export default function FileUpload({ onFileSelected, disabled = false }: Props) 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) handleFile(file)
-    // reset so the same file can be re-selected after clear
     e.target.value = ''
   }
 
@@ -59,9 +55,7 @@ export default function FileUpload({ onFileSelected, disabled = false }: Props) 
     if (!disabled) setDragging(true)
   }
 
-  function handleDragLeave() {
-    setDragging(false)
-  }
+  function handleDragLeave() { setDragging(false) }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault()
@@ -71,107 +65,100 @@ export default function FileUpload({ onFileSelected, disabled = false }: Props) 
     if (file) handleFile(file)
   }
 
-  function handleClear() {
+  function handleClear(e: React.MouseEvent) {
+    e.stopPropagation()
     setSelectedFile(null)
     setError(null)
     onFileSelected(null)
   }
 
-  const isInteractive = !disabled
+  const zoneClass = [
+    'upload-zone',
+    selectedFile ? 'upload-zone--has-file' : '',
+    dragging     ? 'upload-zone--drag'     : '',
+    disabled     ? 'upload-zone--disabled' : '',
+  ].filter(Boolean).join(' ')
+
+  const isPdf = selectedFile?.type === 'application/pdf'
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Drop zone */}
+    <div>
       <div
+        className={zoneClass}
         role="button"
-        tabIndex={isInteractive ? 0 : -1}
-        aria-label="File upload area"
-        onClick={() => isInteractive && inputRef.current?.click()}
-        onKeyDown={(e) => e.key === 'Enter' && isInteractive && inputRef.current?.click()}
+        tabIndex={disabled ? -1 : 0}
+        aria-label="Upload file — click or drag and drop"
+        onClick={() => !disabled && !selectedFile && inputRef.current?.click()}
+        onKeyDown={e => {
+          if ((e.key === 'Enter' || e.key === ' ') && !disabled && !selectedFile)
+            inputRef.current?.click()
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={[
-          'flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 text-center transition-colors',
-          isInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
-          dragging
-            ? 'border-blue-500 bg-blue-50'
-            : error
-            ? 'border-red-400 bg-red-50'
-            : selectedFile
-            ? 'border-green-400 bg-green-50'
-            : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50',
-        ].join(' ')}
       >
         {selectedFile ? (
-          <>
-            <FileIcon className="h-10 w-10 text-green-500" />
-            <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
-            <p className="text-xs text-gray-500">{formatBytes(selectedFile.size)}</p>
-          </>
+          <div className="file-row">
+            <div className="file-thumb" aria-hidden="true">
+              {isPdf ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="8" y1="13" x2="16" y2="13" />
+                  <line x1="8" y1="17" x2="16" y2="17" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              )}
+            </div>
+            <div className="file-meta">
+              <div className="file-name">{selectedFile.name}</div>
+              <div className="file-size">{formatBytes(selectedFile.size)}</div>
+            </div>
+            {!disabled && (
+              <button className="file-clear" onClick={handleClear} aria-label="Remove file">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
         ) : (
           <>
-            <UploadIcon className={`h-10 w-10 ${dragging ? 'text-blue-500' : 'text-gray-400'}`} />
-            <div>
-              <p className="text-sm font-medium text-gray-700">
-                Drag &amp; drop a file here, or{' '}
-                <span className="text-blue-600 underline">browse</span>
-              </p>
-              <p className="mt-1 text-xs text-gray-400">JPG, PNG, PDF — up to 10 MB (25 MB for PDF)</p>
-            </div>
+            <svg className="upload-icon" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+              aria-hidden="true">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p className="upload-prompt">
+              Drop your file here, or <em>browse</em>
+            </p>
+            <p className="upload-hint">JPG, PNG or PDF · up to 25 MB</p>
           </>
         )}
       </div>
+
+      {error && <p className="upload-error-msg" role="alert">{error}</p>}
 
       <input
         ref={inputRef}
         type="file"
         accept={ACCEPTED_EXT}
-        className="hidden"
         onChange={handleChange}
         disabled={disabled}
+        style={{ display: 'none' }}
+        aria-hidden="true"
       />
-
-      {/* Error message */}
-      {error && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
-          {error}
-        </p>
-      )}
-
-      {/* Clear button */}
-      {selectedFile && (
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={disabled}
-          className="mt-3 text-sm text-gray-500 underline hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Remove file
-        </button>
-      )}
     </div>
-  )
-}
-
-function UploadIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"
-      className={className}>
-      <path d="M12 16V4m0 0-4 4m4-4 4 4" />
-      <path d="M20 16.5A3.5 3.5 0 0 1 16.5 20h-9A3.5 3.5 0 0 1 4 16.5" />
-    </svg>
-  )
-}
-
-function FileIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"
-      className={className}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-    </svg>
   )
 }

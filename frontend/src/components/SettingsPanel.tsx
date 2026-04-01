@@ -6,153 +6,100 @@ interface Props {
   disabled?: boolean
 }
 
-const BG_META: { value: BgColor; label: string; hex: string; ring: string }[] = [
-  { value: 'white',  label: 'White',  hex: '#FFFFFF', ring: 'ring-gray-300' },
-  { value: 'cream',  label: 'Cream',  hex: '#FFFDD0', ring: 'ring-yellow-300' },
-  { value: 'yellow', label: 'Yellow', hex: '#FAFFA0', ring: 'ring-yellow-400' },
-  { value: 'blue',   label: 'Blue',   hex: '#D0E8FF', ring: 'ring-blue-400' },
+const BG_COLORS: { value: BgColor; label: string; hex: string }[] = [
+  { value: 'white',  label: 'White',  hex: '#FFFFFF' },
+  { value: 'cream',  label: 'Cream',  hex: '#FFFDD0' },
+  { value: 'yellow', label: 'Yellow', hex: '#FAFFA0' },
+  { value: 'blue',   label: 'Blue',   hex: '#D0E8FF' },
 ]
 
 export default function SettingsPanel({ settings, onChange, disabled = false }: Props) {
   return (
-    <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-5">
-      <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Output settings</h2>
+    <div className={`settings-grid${disabled ? ' settings-grid--disabled' : ''}`}>
 
-      {/* Font size */}
-      <fieldset disabled={disabled}>
-        <legend className="mb-2 text-sm font-medium text-gray-700">Font size</legend>
-        <SegmentedControl<FontSize>
-          name="font_size"
-          options={[
-            { value: 'small',  label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large',  label: 'Large' },
-          ]}
-          value={settings.font_size}
-          onChange={(v) => onChange('font_size', v)}
-        />
-      </fieldset>
-
-      {/* Line spacing */}
-      <fieldset disabled={disabled}>
-        <legend className="mb-2 text-sm font-medium text-gray-700">Line spacing</legend>
-        <SegmentedControl<LineSpacing>
-          name="line_spacing"
-          options={[
-            { value: 'normal',  label: 'Normal' },
-            { value: 'relaxed', label: 'Relaxed' },
-            { value: 'double',  label: 'Double' },
-          ]}
-          value={settings.line_spacing}
-          onChange={(v) => onChange('line_spacing', v)}
-        />
-      </fieldset>
-
-      {/* Language */}
-      <fieldset disabled={disabled}>
-        <legend className="mb-2 text-sm font-medium text-gray-700">Language</legend>
-        <SegmentedControl<Language>
-          name="language"
-          options={[
-            { value: 'eng', label: 'English' },
-            { value: 'nld', label: 'Dutch' },
-          ]}
-          value={settings.language}
-          onChange={(v) => onChange('language', v)}
-        />
-      </fieldset>
-
-      {/* Background color */}
-      <fieldset disabled={disabled}>
-        <legend className="mb-2 text-sm font-medium text-gray-700">Page background</legend>
-        <div className="flex gap-3 flex-wrap">
-          {BG_META.map(({ value, label, hex, ring }) => {
-            const selected = settings.bg_color === value
-            return (
-              <label key={value} className="flex flex-col items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="bg_color"
-                  value={value}
-                  checked={selected}
-                  onChange={() => onChange('bg_color', value)}
-                  className="sr-only"
-                />
-                <span
-                  aria-hidden
-                  className={[
-                    'h-8 w-8 rounded-full border border-gray-300 ring-offset-2 transition-shadow',
-                    selected ? `ring-2 ${ring}` : '',
-                    disabled ? 'opacity-50 cursor-not-allowed' : '',
-                  ].join(' ')}
-                  style={{ backgroundColor: hex }}
-                />
-                <span className="text-xs text-gray-600">{label}</span>
+      <div className="setting-row">
+        <div className="setting-label">Font size</div>
+        <div className="seg" role="radiogroup" aria-label="Font size">
+          {(['small', 'medium', 'large'] as FontSize[]).map(v => (
+            <div className="seg-item" key={v}>
+              <input
+                type="radio"
+                id={`fs-${v}`}
+                name="font_size"
+                checked={settings.font_size === v}
+                onChange={() => onChange('font_size', v)}
+                disabled={disabled}
+              />
+              <label htmlFor={`fs-${v}`}>
+                {v.charAt(0).toUpperCase() + v.slice(1)}
               </label>
-            )
-          })}
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Live preview strip */}
-        <div
-          className="mt-3 h-6 w-full rounded-lg border border-gray-200 transition-colors"
-          style={{ backgroundColor: BG_META.find((b) => b.value === settings.bg_color)?.hex }}
-          aria-label={`Preview of ${settings.bg_color} background`}
-        />
-      </fieldset>
-    </div>
-  )
-}
+      <div className="setting-row">
+        <div className="setting-label">Line spacing</div>
+        <div className="seg" role="radiogroup" aria-label="Line spacing">
+          {(['normal', 'relaxed', 'double'] as LineSpacing[]).map(v => (
+            <div className="seg-item" key={v}>
+              <input
+                type="radio"
+                id={`ls-${v}`}
+                name="line_spacing"
+                checked={settings.line_spacing === v}
+                onChange={() => onChange('line_spacing', v)}
+                disabled={disabled}
+              />
+              <label htmlFor={`ls-${v}`}>
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
 
-// ---- Segmented control ----
+      <div className="setting-row">
+        <div className="setting-label">Language</div>
+        <div className="seg" style={{ maxWidth: '220px' }} role="radiogroup" aria-label="Language">
+          {([['eng', 'English'], ['nld', 'Dutch']] as [Language, string][]).map(([v, label]) => (
+            <div className="seg-item" key={v}>
+              <input
+                type="radio"
+                id={`lang-${v}`}
+                name="language"
+                checked={settings.language === v}
+                onChange={() => onChange('language', v)}
+                disabled={disabled}
+              />
+              <label htmlFor={`lang-${v}`}>{label}</label>
+            </div>
+          ))}
+        </div>
+      </div>
 
-interface SegOption<T extends string> {
-  value: T
-  label: string
-}
+      <div className="setting-row">
+        <div className="setting-label">Page background</div>
+        <div className="swatches" role="radiogroup" aria-label="Page background color">
+          {BG_COLORS.map(({ value, label, hex }) => (
+            <div className="swatch" key={value}>
+              <input
+                type="radio"
+                id={`bg-${value}`}
+                name="bg_color"
+                checked={settings.bg_color === value}
+                onChange={() => onChange('bg_color', value)}
+                disabled={disabled}
+              />
+              <label htmlFor={`bg-${value}`}>
+                <span className="swatch-dot" style={{ background: hex }} aria-hidden="true" />
+                {label}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
 
-interface SegProps<T extends string> {
-  name: string
-  options: SegOption<T>[]
-  value: T
-  onChange: (v: T) => void
-}
-
-function SegmentedControl<T extends string>({ name, options, value, onChange }: SegProps<T>) {
-  return (
-    <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-      {options.map((opt, i) => {
-        const selected = opt.value === value
-        return (
-          <label
-            key={opt.value}
-            className={[
-              'flex-1 text-center',
-              i > 0 ? 'border-l border-gray-200' : '',
-            ].join(' ')}
-          >
-            <input
-              type="radio"
-              name={name}
-              value={opt.value}
-              checked={selected}
-              onChange={() => onChange(opt.value)}
-              className="sr-only"
-            />
-            <span
-              className={[
-                'block py-1.5 text-sm font-medium cursor-pointer select-none transition-colors',
-                selected
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50',
-                'fieldset:disabled:cursor-not-allowed fieldset:disabled:opacity-50',
-              ].join(' ')}
-            >
-              {opt.label}
-            </span>
-          </label>
-        )
-      })}
     </div>
   )
 }
