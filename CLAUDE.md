@@ -101,6 +101,19 @@ Nothing is written to disk. All file data lives in memory (`io.BytesIO`) and is 
 
 OpenDyslexic Regular and Bold `.ttf` files live in `backend/fonts/`. These must be registered with fpdf2 at startup. Do not substitute other fonts.
 
+## Workflow
+
+When pointed to a GitHub issue number, follow these steps in order:
+
+1. **Read the issue** — fetch it with `gh issue view <number>` to understand the full requirements.
+2. **Create a branch** — name it `feature/issue-<number>-<short-description>` branching from `main`.
+3. **Implement** — make all necessary code changes to fulfill the issue.
+4. **Commit** — stage and commit with a message referencing the issue (e.g. `feat: <description> (issue #<number>)`).
+5. **Push** — push the branch to origin.
+6. **Open a PR** — use `gh pr create` targeting `main`, with a summary and test plan in the body.
+
+Do not ask for confirmation between steps unless you hit an ambiguity that cannot be resolved from the issue text.
+
 ## Critical Constraints
 
 - **Zero persistence** — no file writes, no database, no logging of user content. This is a privacy commitment stated in the UI.
