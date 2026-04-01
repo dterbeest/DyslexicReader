@@ -7,7 +7,8 @@
       "Bash(gh label:*)",
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
