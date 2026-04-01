@@ -1,22 +1,44 @@
 """
 Image preprocessing for OCR quality improvement.
 
-Steps: convert to grayscale → binarize (Otsu threshold) → deskew.
+Pipeline: grayscale → upscale if small → denoise → CLAHE → Otsu binarize → deskew.
 """
-import io
-import math
-
 import cv2
 import numpy as np
 from PIL import Image
+
+# Minimum size (shortest side in pixels) before upscaling — approximates 300 DPI
+_MIN_SIDE = 1000
 
 
 def preprocess_image(image: Image.Image) -> Image.Image:
     img_array = np.array(image.convert("RGB"))
     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+    gray = _upscale_if_small(gray)
+    gray = _denoise(gray)
+    gray = _apply_clahe(gray)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     deskewed = _deskew(binary)
     return Image.fromarray(deskewed)
+
+
+def _upscale_if_small(gray: np.ndarray) -> np.ndarray:
+    h, w = gray.shape
+    shortest = min(h, w)
+    if shortest >= _MIN_SIDE:
+        return gray
+    scale = _MIN_SIDE / shortest
+    new_w, new_h = int(w * scale), int(h * scale)
+    return cv2.resize(gray, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+
+
+def _denoise(gray: np.ndarray) -> np.ndarray:
+    return cv2.medianBlur(gray, 3)
+
+
+def _apply_clahe(gray: np.ndarray) -> np.ndarray:
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    return clahe.apply(gray)
 
 
 def _deskew(binary: np.ndarray) -> np.ndarray:
