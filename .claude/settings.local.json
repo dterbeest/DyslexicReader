@@ -4,7 +4,10 @@
       "Bash(gh auth:*)",
       "Bash(gh repo:*)",
       "Bash(gh issue:*)",
-      "Bash(gh label:*)"
+      "Bash(gh label:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }
