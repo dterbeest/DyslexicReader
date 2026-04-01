@@ -40,7 +40,7 @@ def _ocr_image_bytes(contents: bytes, lang: str) -> str:
     return _run_ocr(image, lang)
 
 
-_TESS_CONFIG = "--oem 1 --psm 6"
+_TESS_CONFIG = "--oem 3 --psm 3"
 # Minimum extracted words from pdfplumber to trust digital text over OCR.
 _MIN_DIGITAL_WORDS = 20
 

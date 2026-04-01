@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 # Minimum size (shortest side in pixels) before upscaling — ~150 DPI minimum for decent OCR
-_MIN_SIDE = 1800
+_MIN_SIDE = 1000
 # Maximum size (longest side in pixels) before downscaling — phone photos are often 12MP+
 _MAX_SIDE = 2400
 
