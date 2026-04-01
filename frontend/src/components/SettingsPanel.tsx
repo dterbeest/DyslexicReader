@@ -1,4 +1,4 @@
-import type { Settings, FontSize, LineSpacing, BgColor } from '../hooks/useSettings'
+import type { Settings, FontSize, LineSpacing, BgColor, Language } from '../hooks/useSettings'
 
 interface Props {
   settings: Settings
@@ -45,6 +45,20 @@ export default function SettingsPanel({ settings, onChange, disabled = false }: 
           ]}
           value={settings.line_spacing}
           onChange={(v) => onChange('line_spacing', v)}
+        />
+      </fieldset>
+
+      {/* Language */}
+      <fieldset disabled={disabled}>
+        <legend className="mb-2 text-sm font-medium text-gray-700">Language</legend>
+        <SegmentedControl<Language>
+          name="language"
+          options={[
+            { value: 'eng', label: 'English' },
+            { value: 'nld', label: 'Dutch' },
+          ]}
+          value={settings.language}
+          onChange={(v) => onChange('language', v)}
         />
       </fieldset>
 
