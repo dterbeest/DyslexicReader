@@ -3,10 +3,14 @@ PDF generation using fpdf2 with OpenDyslexic fonts.
 
 OpenDyslexic Regular and Bold OTF files live in backend/fonts/.
 """
+from __future__ import annotations
+
 import re
 from pathlib import Path
 
 from fpdf import FPDF
+
+from services.layout_ir import BlockKind, DocumentLayout, TextBlock
 
 FONTS_DIR = Path(__file__).parent.parent / "fonts"
 
@@ -28,10 +32,20 @@ BG_COLORS = {
 
 MARGIN_MM = 25
 PT_TO_MM = 0.352778
-HEADING_SIZE_MULTIPLIER = 1.4
+# Heading size multipliers by level
+_H1_MULTIPLIER = 1.6
+_H2_MULTIPLIER = 1.3
+# List item indent in mm per nesting level
+_LIST_INDENT_MM = 10
 
 
-def build_pdf(text: str, settings: dict) -> bytes:
+def build_pdf(content: str | DocumentLayout, settings: dict) -> bytes:
+    """Build a dyslexia-friendly PDF from either a plain string or a DocumentLayout."""
+    if isinstance(content, str):
+        layout = _str_to_layout(content)
+    else:
+        layout = content
+
     font_size_pt = FONT_SIZES.get(settings.get("font_size", "medium"), 14)
     line_spacing = LINE_SPACINGS.get(settings.get("line_spacing", "relaxed"), 1.5)
     bg_rgb = BG_COLORS.get(settings.get("bg_color", "white"), (255, 255, 255))
@@ -49,24 +63,58 @@ def build_pdf(text: str, settings: dict) -> bytes:
     pdf.add_page()
 
     body_height_mm = font_size_pt * PT_TO_MM * line_spacing
-    heading_size_pt = int(font_size_pt * HEADING_SIZE_MULTIPLIER)
-    heading_height_mm = heading_size_pt * PT_TO_MM * line_spacing
+    h1_size_pt = int(font_size_pt * _H1_MULTIPLIER)
+    h2_size_pt = int(font_size_pt * _H2_MULTIPLIER)
 
+    for block in layout.blocks:
+        if block.kind == BlockKind.WHITESPACE:
+            pdf.ln(body_height_mm * 1.5)
+            continue
+
+        text = block.text.strip()
+        if not text:
+            continue
+
+        if block.kind == BlockKind.HEADING:
+            if block.extra_space_before:
+                pdf.ln(body_height_mm)
+            size_pt = h1_size_pt if block.heading_level == 1 else h2_size_pt
+            height_mm = size_pt * PT_TO_MM * line_spacing
+            pdf.set_font(font_name, style="B", size=size_pt)
+            pdf.multi_cell(0, height_mm, text)
+            pdf.ln(height_mm * 0.5)
+
+        elif block.kind == BlockKind.LIST_ITEM:
+            indent = _LIST_INDENT_MM * max(1, block.indent_level)
+            x = MARGIN_MM + indent
+            available_w = pdf.w - x - MARGIN_MM
+            pdf.set_x(x)
+            pdf.set_font(font_name, size=font_size_pt)
+            pdf.multi_cell(available_w, body_height_mm, text)
+            pdf.ln(body_height_mm * 0.25)
+
+        else:  # BODY
+            if block.extra_space_before:
+                pdf.ln(body_height_mm * 0.5)
+            pdf.set_font(font_name, size=font_size_pt)
+            pdf.multi_cell(0, body_height_mm, text)
+            pdf.ln(body_height_mm * 0.5)
+
+    return bytes(pdf.output())
+
+
+def _str_to_layout(text: str) -> DocumentLayout:
+    """Convert a plain string to a DocumentLayout using the legacy heading heuristic."""
+    blocks: list[TextBlock] = []
     for paragraph in text.split("\n\n"):
         paragraph = paragraph.strip()
         if not paragraph:
             continue
-
         if _is_heading(paragraph):
-            pdf.set_font(font_name, style="B", size=heading_size_pt)
-            pdf.multi_cell(0, heading_height_mm, paragraph)
-            pdf.ln(heading_height_mm * 0.5)
+            blocks.append(TextBlock(kind=BlockKind.HEADING, text=paragraph, heading_level=1))
         else:
-            pdf.set_font(font_name, size=font_size_pt)
-            pdf.multi_cell(0, body_height_mm, paragraph)
-            pdf.ln(body_height_mm * 0.5)
-
-    return bytes(pdf.output())
+            blocks.append(TextBlock(kind=BlockKind.BODY, text=paragraph))
+    return DocumentLayout(blocks=blocks)
 
 
 def _is_heading(paragraph: str) -> bool:
