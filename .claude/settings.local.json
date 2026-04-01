@@ -8,7 +8,13 @@
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
       "Bash(gh pr:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(python -m pytest tests/ -x -q)",
+      "Bash(git commit:*)",
+      "Bash(stored\" \\(issue #13\\):*)",
+      "Bash(python -c \"from routers import convert; print\\(''OK''\\)\")",
+      "Bash(pytest tests/ -q)",
+      "Bash(python -m pytest tests/ -q)"
     ]
   }
 }
