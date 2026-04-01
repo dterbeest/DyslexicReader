@@ -5,15 +5,22 @@ const TIMEOUT_MS = 60_000
 
 export class ConvertError extends Error {
   readonly status?: number
-  constructor(message: string, status?: number) {
+  readonly retryAfterSeconds?: number
+
+  constructor(message: string, status?: number, retryAfterSeconds?: number) {
     super(message)
     this.name = 'ConvertError'
     this.status = status
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
-function classify(status: number): string {
-  if (status === 429) return 'Too many conversions. Please wait an hour before trying again.'
+function classify(status: number, response: Response): string {
+  if (status === 429) {
+    const retryAfter = parseInt(response.headers.get('Retry-After') ?? '3600', 10)
+    const minutes = Math.ceil(retryAfter / 60)
+    return `You've reached the conversion limit. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
+  }
   if (status === 413) return 'File is too large for the server to process.'
   if (status === 422) return 'The file could not be read. Try a clearer image or a different PDF.'
   return 'Something went wrong. Please try again.'
@@ -42,7 +49,10 @@ export async function convertFile(file: File, settings: Settings): Promise<Blob>
   }
 
   if (!response.ok) {
-    throw new ConvertError(classify(response.status), response.status)
+    const retryAfter = response.status === 429
+      ? parseInt(response.headers.get('Retry-After') ?? '3600', 10)
+      : undefined
+    throw new ConvertError(classify(response.status, response), response.status, retryAfter)
   }
 
   return response.blob()
