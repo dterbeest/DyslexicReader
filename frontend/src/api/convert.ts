@@ -4,12 +4,11 @@ const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const TIMEOUT_MS = 60_000
 
 export class ConvertError extends Error {
-  constructor(
-    message: string,
-    public readonly status?: number,
-  ) {
+  readonly status?: number
+  constructor(message: string, status?: number) {
     super(message)
     this.name = 'ConvertError'
+    this.status = status
   }
 }
 
