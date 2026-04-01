@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.responses import StreamingResponse
 
-from services.extractor import extract_layout
+from services.extractor import extract_text
 from services.pdf_writer import build_pdf
 from utils.file_type import detect_file_type
 
@@ -24,8 +24,8 @@ async def convert_file(contents: bytes, content_type: str, settings: dict) -> St
 
     loop = asyncio.get_event_loop()
     try:
-        layout = await asyncio.wait_for(
-            loop.run_in_executor(_executor, extract_layout, contents, file_type, settings.get("language", "eng")),
+        text = await asyncio.wait_for(
+            loop.run_in_executor(_executor, extract_text, contents, file_type, settings.get("language", "eng")),
             timeout=PROCESSING_TIMEOUT_SECONDS,
         )
     except asyncio.TimeoutError:
@@ -34,7 +34,7 @@ async def convert_file(contents: bytes, content_type: str, settings: dict) -> St
             "The file may be too complex. Please try a smaller or simpler file."
         )
 
-    pdf_bytes = build_pdf(layout, settings)
+    pdf_bytes = build_pdf(text, settings)
 
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
