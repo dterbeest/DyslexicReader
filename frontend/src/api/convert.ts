@@ -33,6 +33,7 @@ export async function convertFile(file: File, settings: Settings): Promise<Blob>
   body.append('line_spacing', settings.line_spacing)
   body.append('bg_color', settings.bg_color)
   body.append('language', settings.language)
+  body.append('font_family', settings.font_family)
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)

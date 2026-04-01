@@ -4,12 +4,14 @@ export type FontSize = 'small' | 'medium' | 'large'
 export type LineSpacing = 'normal' | 'relaxed' | 'double'
 export type BgColor = 'white' | 'cream' | 'yellow' | 'blue'
 export type Language = 'eng' | 'nld'
+export type FontFamily = 'opendyslexic' | 'lexend' | 'atkinson'
 
 export interface Settings {
   font_size: FontSize
   line_spacing: LineSpacing
   bg_color: BgColor
   language: Language
+  font_family: FontFamily
 }
 
 const DEFAULTS: Settings = {
@@ -17,6 +19,7 @@ const DEFAULTS: Settings = {
   line_spacing: 'relaxed',
   bg_color: 'cream',
   language: 'eng',
+  font_family: 'opendyslexic',
 }
 
 const STORAGE_KEY = 'dyslexicreader_settings'

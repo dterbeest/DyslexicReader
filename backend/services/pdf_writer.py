@@ -10,6 +10,13 @@ from fpdf import FPDF
 
 FONTS_DIR = Path(__file__).parent.parent / "fonts"
 
+# (regular_file, bold_file, fpdf_font_name)
+FONT_FILES = {
+    "opendyslexic": ("OpenDyslexic-Regular.otf", "OpenDyslexic-Bold.otf", "OpenDyslexic"),
+    "lexend":       ("Lexend-Regular.ttf",        "Lexend-Bold.ttf",        "Lexend"),
+    "atkinson":     ("AtkinsonHyperlegible-Regular.ttf", "AtkinsonHyperlegible-Bold.ttf", "AtkinsonHyperlegible"),
+}
+
 FONT_SIZES = {"small": 12, "medium": 14, "large": 18}
 LINE_SPACINGS = {"normal": 1.2, "relaxed": 1.5, "double": 2.0}
 BG_COLORS = {
@@ -29,12 +36,15 @@ def build_pdf(text: str, settings: dict) -> bytes:
     line_spacing = LINE_SPACINGS.get(settings.get("line_spacing", "relaxed"), 1.5)
     bg_rgb = BG_COLORS.get(settings.get("bg_color", "white"), (255, 255, 255))
 
-    pdf = _DyslexicPDF(bg_rgb)
+    font_key = settings.get("font_family", "opendyslexic")
+    regular_file, bold_file, font_name = FONT_FILES.get(font_key, FONT_FILES["opendyslexic"])
+
+    pdf = _DyslexicPDF(bg_rgb, font_name)
     pdf.set_margins(left=MARGIN_MM, top=MARGIN_MM, right=MARGIN_MM)
     pdf.set_auto_page_break(auto=True, margin=MARGIN_MM)
 
-    pdf.add_font("OpenDyslexic", style="", fname=str(FONTS_DIR / "OpenDyslexic-Regular.otf"))
-    pdf.add_font("OpenDyslexic", style="B", fname=str(FONTS_DIR / "OpenDyslexic-Bold.otf"))
+    pdf.add_font(font_name, style="", fname=str(FONTS_DIR / regular_file))
+    pdf.add_font(font_name, style="B", fname=str(FONTS_DIR / bold_file))
 
     pdf.add_page()
 
@@ -48,11 +58,11 @@ def build_pdf(text: str, settings: dict) -> bytes:
             continue
 
         if _is_heading(paragraph):
-            pdf.set_font("OpenDyslexic", style="B", size=heading_size_pt)
+            pdf.set_font(font_name, style="B", size=heading_size_pt)
             pdf.multi_cell(0, heading_height_mm, paragraph)
             pdf.ln(heading_height_mm * 0.5)
         else:
-            pdf.set_font("OpenDyslexic", size=font_size_pt)
+            pdf.set_font(font_name, size=font_size_pt)
             pdf.multi_cell(0, body_height_mm, paragraph)
             pdf.ln(body_height_mm * 0.5)
 
@@ -72,9 +82,10 @@ def _is_heading(paragraph: str) -> bool:
 class _DyslexicPDF(FPDF):
     """FPDF subclass that paints the background on every page and adds page numbers."""
 
-    def __init__(self, bg_rgb: tuple[int, int, int]):
+    def __init__(self, bg_rgb: tuple[int, int, int], font_name: str):
         super().__init__()
         self._bg_rgb = bg_rgb
+        self._font_name = font_name
 
     def header(self) -> None:
         r, g, b = self._bg_rgb
@@ -83,7 +94,7 @@ class _DyslexicPDF(FPDF):
 
     def footer(self) -> None:
         self.set_y(-15)
-        self.set_font("OpenDyslexic", size=9)
+        self.set_font(self._font_name, size=9)
         self.set_text_color(128, 128, 128)
         self.cell(0, 10, str(self.page_no()), align="C")
         self.set_text_color(0, 0, 0)

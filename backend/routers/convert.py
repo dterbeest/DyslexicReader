@@ -25,6 +25,7 @@ async def convert(
     line_spacing: str = Form("relaxed"),
     bg_color: str = Form("white"),
     language: str = Form("eng"),
+    font_family: str = Form("opendyslexic"),
 ):
     error = validate_upload(file)
     if error:
@@ -32,6 +33,9 @@ async def convert(
 
     if language not in ("eng", "nld"):
         return JSONResponse(status_code=400, content={"error": "Unsupported language."})
+
+    if font_family not in ("opendyslexic", "lexend", "atkinson"):
+        return JSONResponse(status_code=400, content={"error": "Unsupported font."})
 
     contents = await file.read()
 
@@ -46,6 +50,7 @@ async def convert(
         "line_spacing": line_spacing,
         "bg_color": bg_color,
         "language": language,
+        "font_family": font_family,
     }
 
     try:
