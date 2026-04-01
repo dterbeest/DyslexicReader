@@ -13,6 +13,7 @@ function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pdfBlobRef = useRef<Blob | null>(null)
   const fileNameRef = useRef<string>('')
+  const viewUrlRef = useRef<string | null>(null)
 
   const converting = phase === 'converting'
 
@@ -42,11 +43,23 @@ function App() {
     URL.revokeObjectURL(url)
   }
 
+  function handleViewInBrowser() {
+    if (!pdfBlobRef.current) return
+    if (viewUrlRef.current) URL.revokeObjectURL(viewUrlRef.current)
+    const url = URL.createObjectURL(pdfBlobRef.current)
+    viewUrlRef.current = url
+    window.open(url, '_blank')
+  }
+
   function handleReset() {
     setFile(null)
     setPhase('idle')
     setErrorMsg(null)
     pdfBlobRef.current = null
+    if (viewUrlRef.current) {
+      URL.revokeObjectURL(viewUrlRef.current)
+      viewUrlRef.current = null
+    }
   }
 
   return (
@@ -81,13 +94,22 @@ function App() {
 
       {phase === 'done' && (
         <div className="flex flex-col items-center gap-3">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="rounded-xl bg-green-600 px-8 py-3 text-white font-medium hover:bg-green-700 transition-colors"
-          >
-            Download PDF
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="rounded-xl bg-green-600 px-8 py-3 text-white font-medium hover:bg-green-700 transition-colors"
+            >
+              Download PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleViewInBrowser}
+              className="rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
+            >
+              View in Browser
+            </button>
+          </div>
           <button
             type="button"
             onClick={handleReset}
