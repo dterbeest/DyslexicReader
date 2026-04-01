@@ -13,7 +13,7 @@ import re
 import pytesseract
 from pytesseract import Output
 import pdfplumber
-from PIL import Image
+from PIL import Image, ImageOps
 from pdf2image import convert_from_bytes
 
 from utils.image_processing import preprocess_image
@@ -35,6 +35,7 @@ def extract_text(contents: bytes, file_type: str, lang: str = "eng") -> str:
 
 def _ocr_image_bytes(contents: bytes, lang: str) -> str:
     image = Image.open(io.BytesIO(contents))
+    image = ImageOps.exif_transpose(image)
     image = preprocess_image(image)
     return _run_ocr(image, lang)
 
