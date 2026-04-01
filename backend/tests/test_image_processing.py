@@ -4,6 +4,7 @@ from PIL import Image
 
 from utils.image_processing import (
     preprocess_image,
+    _downscale_if_large,
     _upscale_if_small,
     _denoise,
     _apply_clahe,
@@ -18,6 +19,20 @@ def _gray(h: int, w: int, fill: int = 128) -> np.ndarray:
 def _random_gray(h: int, w: int) -> np.ndarray:
     rng = np.random.default_rng(42)
     return rng.integers(0, 256, size=(h, w), dtype=np.uint8)
+
+
+# --- _downscale_if_large ---
+
+def test_downscale_large_image():
+    img = _gray(3000, 4000)  # typical phone photo dimensions
+    result = _downscale_if_large(img)
+    assert max(result.shape) <= 2400
+
+
+def test_no_downscale_small_image():
+    img = _gray(1200, 1600)
+    result = _downscale_if_large(img)
+    assert result.shape == (1200, 1600)
 
 
 # --- _upscale_if_small ---

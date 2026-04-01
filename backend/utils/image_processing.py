@@ -1,7 +1,7 @@
 """
 Image preprocessing for OCR quality improvement.
 
-Pipeline: grayscale → upscale if small → denoise → CLAHE → Otsu binarize → deskew.
+Pipeline: grayscale → downscale if large → upscale if small → denoise → CLAHE → adaptive threshold → deskew.
 """
 import cv2
 import numpy as np
@@ -9,17 +9,32 @@ from PIL import Image
 
 # Minimum size (shortest side in pixels) before upscaling — approximates 300 DPI
 _MIN_SIDE = 1000
+# Maximum size (longest side in pixels) before downscaling — phone photos are often 12MP+
+_MAX_SIDE = 2400
 
 
 def preprocess_image(image: Image.Image) -> Image.Image:
     img_array = np.array(image.convert("RGB"))
     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+    gray = _downscale_if_large(gray)
     gray = _upscale_if_small(gray)
     gray = _denoise(gray)
     gray = _apply_clahe(gray)
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    binary = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15
+    )
     deskewed = _deskew(binary)
     return Image.fromarray(deskewed)
+
+
+def _downscale_if_large(gray: np.ndarray) -> np.ndarray:
+    h, w = gray.shape
+    longest = max(h, w)
+    if longest <= _MAX_SIDE:
+        return gray
+    scale = _MAX_SIDE / longest
+    new_w, new_h = int(w * scale), int(h * scale)
+    return cv2.resize(gray, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
 
 def _upscale_if_small(gray: np.ndarray) -> np.ndarray:
