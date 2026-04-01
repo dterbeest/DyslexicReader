@@ -14,7 +14,10 @@
       "Bash(stored\" \\(issue #13\\):*)",
       "Bash(python -c \"from routers import convert; print\\(''OK''\\)\")",
       "Bash(pytest tests/ -q)",
-      "Bash(python -m pytest tests/ -q)"
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs cat:*)",
+      "Bash(grep -r \"config\\\\|PSM\\\\|OEM\\\\|--\" /c/Projects/Vibe/backend --include=*.py)"
     ]
   }
 }
