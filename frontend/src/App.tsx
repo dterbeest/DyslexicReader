@@ -53,6 +53,12 @@ function App() {
     <main className="min-h-screen flex flex-col items-center justify-center gap-8 bg-white px-4">
       <h1 className="text-4xl font-bold text-gray-900">DyslexicReader</h1>
 
+      {/* Privacy notice — file is never stored */}
+      <p className="text-sm text-gray-500 text-center max-w-md">
+        Your file is processed entirely in memory and never stored. No data is retained after
+        conversion.
+      </p>
+
       <FileUpload onFileSelected={setFile} disabled={converting || phase === 'done'} />
       <SettingsPanel settings={settings} onChange={update} disabled={converting || phase === 'done'} />
 

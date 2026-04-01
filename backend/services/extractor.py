@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Minimum number of non-whitespace characters to consider OCR successful.
 _MIN_TEXT_LENGTH = 10
+MAX_PDF_PAGES = 50
 
 
 def extract_text(contents: bytes, file_type: str) -> str:
@@ -120,17 +121,32 @@ def _log_confidence(data: dict) -> None:
 
 
 def _extract_pdf(contents: bytes) -> str:
-    pages_text: list[str] = []
+    try:
+        with pdfplumber.open(io.BytesIO(contents)) as pdf:
+            if len(pdf.pages) > MAX_PDF_PAGES:
+                raise ValueError(
+                    f"PDF exceeds the {MAX_PDF_PAGES}-page limit ({len(pdf.pages)} pages). "
+                    "Please split the document and re-upload."
+                )
 
-    with pdfplumber.open(io.BytesIO(contents)) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text()
-            if text and text.strip():
-                pages_text.append(text.strip())
-            else:
-                # Scanned page — rasterize and OCR
-                page_image = _rasterize_page(contents, page.page_number)
-                pages_text.append(_run_ocr(page_image))
+            pages_text: list[str] = []
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text and text.strip():
+                    pages_text.append(text.strip())
+                else:
+                    # Scanned page — rasterize and OCR
+                    page_image = _rasterize_page(contents, page.page_number)
+                    pages_text.append(_run_ocr(page_image))
+
+    except Exception as exc:
+        # pdfplumber/pdfminer raises various exceptions for encrypted PDFs
+        msg = str(exc).lower()
+        if "encrypt" in msg or "password" in msg or "decrypt" in msg:
+            raise ValueError(
+                "This PDF is password-protected. Please remove the password and try again."
+            ) from exc
+        raise
 
     return "\n\n".join(pages_text)
 
