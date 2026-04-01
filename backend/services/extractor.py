@@ -40,8 +40,16 @@ def _ocr_image_bytes(contents: bytes, lang: str) -> str:
     return _run_ocr(image, lang)
 
 
+_TESS_CONFIG = "--oem 1 --psm 6"
+# Minimum word confidence (0–100) — words below this are treated as OCR noise.
+_MIN_WORD_CONFIDENCE = 30
+# Minimum extracted words from pdfplumber to trust digital text over OCR.
+_MIN_DIGITAL_WORDS = 20
+
+
 def _run_ocr(image: Image.Image, lang: str = "eng") -> str:
-    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
+    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT,
+                                     config=_TESS_CONFIG)
     _log_confidence(data)
     text = _reconstruct_paragraphs(data)
     text = _clean_text(text)
@@ -70,8 +78,8 @@ def _reconstruct_paragraphs(data: dict) -> str:
         par = data["par_num"][i]
         line = data["line_num"][i]
 
-        # Skip empty tokens or very low confidence detections
-        if not word.strip() or conf == -1:
+        # Skip empty tokens, Tesseract layout markers, or low-confidence words
+        if not word.strip() or conf == -1 or int(conf) < _MIN_WORD_CONFIDENCE:
             continue
 
         # Detect paragraph boundary
@@ -104,8 +112,13 @@ def _reconstruct_paragraphs(data: dict) -> str:
 
 def _clean_text(text: str) -> str:
     """Strip non-printable characters and normalize whitespace."""
+    import unicodedata
+    # Normalize Unicode ligatures (ﬁ→fi, ﬂ→fl, ﬀ→ff, etc.)
+    text = unicodedata.normalize("NFKD", text)
     # Remove non-printable characters (keep newlines and tabs)
     text = re.sub(r"[^\x09\x0a\x0d\x20-\x7e\u00a0-\ufffd]", "", text)
+    # Rejoin words hyphenated across line breaks (e.g. "some-\nword" → "someword")
+    text = re.sub(r"-\n(?=[a-z])", "", text)
     # Collapse runs of spaces/tabs within lines
     text = re.sub(r"[ \t]+", " ", text)
     # Normalize line endings and collapse 3+ newlines to double
@@ -133,7 +146,9 @@ def _extract_pdf(contents: bytes, lang: str = "eng") -> str:
             pages_text: list[str] = []
             for page in pdf.pages:
                 text = page.extract_text()
-                if text and text.strip():
+                # Require a minimum word count before trusting pdfplumber extraction;
+                # a handful of words can come from headers/footers on otherwise scanned pages.
+                if text and len(text.split()) >= _MIN_DIGITAL_WORDS:
                     pages_text.append(text.strip())
                 else:
                     # Scanned page — rasterize and OCR

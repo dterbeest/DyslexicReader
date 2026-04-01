@@ -1,14 +1,14 @@
 """
 Image preprocessing for OCR quality improvement.
 
-Pipeline: grayscale → downscale if large → upscale if small → denoise → CLAHE → adaptive threshold → deskew.
+Pipeline: grayscale → downscale if large → upscale if small → sharpen → denoise → CLAHE → adaptive threshold → deskew.
 """
 import cv2
 import numpy as np
 from PIL import Image
 
-# Minimum size (shortest side in pixels) before upscaling — approximates 300 DPI
-_MIN_SIDE = 1000
+# Minimum size (shortest side in pixels) before upscaling — ~150 DPI minimum for decent OCR
+_MIN_SIDE = 1800
 # Maximum size (longest side in pixels) before downscaling — phone photos are often 12MP+
 _MAX_SIDE = 2400
 
@@ -18,6 +18,7 @@ def preprocess_image(image: Image.Image) -> Image.Image:
     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     gray = _downscale_if_large(gray)
     gray = _upscale_if_small(gray)
+    gray = _sharpen(gray)
     gray = _denoise(gray)
     gray = _apply_clahe(gray)
     binary = cv2.adaptiveThreshold(
@@ -45,6 +46,12 @@ def _upscale_if_small(gray: np.ndarray) -> np.ndarray:
     scale = _MIN_SIDE / shortest
     new_w, new_h = int(w * scale), int(h * scale)
     return cv2.resize(gray, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+
+
+def _sharpen(gray: np.ndarray) -> np.ndarray:
+    """Sharpen edges after upscaling — INTER_CUBIC blurs slightly, hurting OCR accuracy."""
+    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+    return cv2.filter2D(gray, -1, kernel)
 
 
 def _denoise(gray: np.ndarray) -> np.ndarray:
