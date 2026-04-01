@@ -24,10 +24,14 @@ async def convert(
     font_size: str = Form("medium"),
     line_spacing: str = Form("relaxed"),
     bg_color: str = Form("white"),
+    language: str = Form("eng"),
 ):
     error = validate_upload(file)
     if error:
         return JSONResponse(status_code=400, content={"error": error})
+
+    if language not in ("eng", "nld"):
+        return JSONResponse(status_code=400, content={"error": "Unsupported language."})
 
     contents = await file.read()
 
@@ -41,6 +45,7 @@ async def convert(
         "font_size": font_size,
         "line_spacing": line_spacing,
         "bg_color": bg_color,
+        "language": language,
     }
 
     try:

@@ -3,17 +3,20 @@ import { useState } from 'react'
 export type FontSize = 'small' | 'medium' | 'large'
 export type LineSpacing = 'normal' | 'relaxed' | 'double'
 export type BgColor = 'white' | 'cream' | 'yellow' | 'blue'
+export type Language = 'eng' | 'nld'
 
 export interface Settings {
   font_size: FontSize
   line_spacing: LineSpacing
   bg_color: BgColor
+  language: Language
 }
 
 const DEFAULTS: Settings = {
   font_size: 'medium',
   line_spacing: 'relaxed',
   bg_color: 'cream',
+  language: 'eng',
 }
 
 const STORAGE_KEY = 'dyslexicreader_settings'

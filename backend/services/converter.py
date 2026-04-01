@@ -25,7 +25,7 @@ async def convert_file(contents: bytes, content_type: str, settings: dict) -> St
     loop = asyncio.get_event_loop()
     try:
         text = await asyncio.wait_for(
-            loop.run_in_executor(_executor, extract_text, contents, file_type),
+            loop.run_in_executor(_executor, extract_text, contents, file_type, settings.get("language", "eng")),
             timeout=PROCESSING_TIMEOUT_SECONDS,
         )
     except asyncio.TimeoutError:

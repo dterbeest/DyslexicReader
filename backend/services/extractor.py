@@ -25,22 +25,22 @@ _MIN_TEXT_LENGTH = 10
 MAX_PDF_PAGES = 50
 
 
-def extract_text(contents: bytes, file_type: str) -> str:
+def extract_text(contents: bytes, file_type: str, lang: str = "eng") -> str:
     if file_type == "image":
-        return _ocr_image_bytes(contents)
+        return _ocr_image_bytes(contents, lang)
     if file_type == "pdf":
-        return _extract_pdf(contents)
+        return _extract_pdf(contents, lang)
     raise ValueError(f"Unsupported file type: {file_type}")
 
 
-def _ocr_image_bytes(contents: bytes) -> str:
+def _ocr_image_bytes(contents: bytes, lang: str) -> str:
     image = Image.open(io.BytesIO(contents))
     image = preprocess_image(image)
-    return _run_ocr(image)
+    return _run_ocr(image, lang)
 
 
-def _run_ocr(image: Image.Image) -> str:
-    data = pytesseract.image_to_data(image, lang="eng", output_type=Output.DICT)
+def _run_ocr(image: Image.Image, lang: str = "eng") -> str:
+    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
     _log_confidence(data)
     text = _reconstruct_paragraphs(data)
     text = _clean_text(text)
@@ -120,7 +120,7 @@ def _log_confidence(data: dict) -> None:
         logger.debug("OCR confidence: %.1f%% (words: %d)", avg_conf, len(confidences))
 
 
-def _extract_pdf(contents: bytes) -> str:
+def _extract_pdf(contents: bytes, lang: str = "eng") -> str:
     try:
         with pdfplumber.open(io.BytesIO(contents)) as pdf:
             if len(pdf.pages) > MAX_PDF_PAGES:
@@ -137,7 +137,7 @@ def _extract_pdf(contents: bytes) -> str:
                 else:
                     # Scanned page — rasterize and OCR
                     page_image = _rasterize_page(contents, page.page_number)
-                    pages_text.append(_run_ocr(page_image))
+                    pages_text.append(_run_ocr(page_image, lang))
 
     except Exception as exc:
         # pdfplumber/pdfminer raises various exceptions for encrypted PDFs
