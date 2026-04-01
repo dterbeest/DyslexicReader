@@ -1,21 +1,20 @@
 import { useState, useRef } from 'react'
 import FileUpload from './components/FileUpload'
 import SettingsPanel from './components/SettingsPanel'
+import OpenDyslexicInfo from './components/OpenDyslexicInfo'
 import { useSettings } from './hooks/useSettings'
 import { convertFile, ConvertError } from './api/convert'
 
 type Phase = 'idle' | 'converting' | 'done' | 'error'
 
-function App() {
+export default function App() {
   const [file, setFile] = useState<File | null>(null)
   const { settings, update } = useSettings()
   const [phase, setPhase] = useState<Phase>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const pdfBlobRef = useRef<Blob | null>(null)
+  const pdfBlobRef  = useRef<Blob | null>(null)
   const fileNameRef = useRef<string>('')
-  const viewUrlRef = useRef<string | null>(null)
-
-  const converting = phase === 'converting'
+  const viewUrlRef  = useRef<string | null>(null)
 
   async function handleConvert() {
     if (!file) return
@@ -62,93 +61,125 @@ function App() {
     }
   }
 
+  const locked = phase === 'converting' || phase === 'done'
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-8 bg-white px-4">
-      <h1 className="text-4xl font-bold text-gray-900">DyslexicReader</h1>
+    <div className="app">
 
-      {/* Privacy notice — file is never stored */}
-      <p className="text-sm text-gray-500 text-center max-w-md">
-        Your file is processed entirely in memory and never stored. No data is retained after
-        conversion.
-      </p>
-
-      <FileUpload onFileSelected={setFile} disabled={converting || phase === 'done'} />
-      <SettingsPanel settings={settings} onChange={update} disabled={converting || phase === 'done'} />
-
-      {phase === 'idle' && file && (
-        <button
-          type="button"
-          onClick={handleConvert}
-          className="rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
-        >
-          Convert
-        </button>
-      )}
-
-      {phase === 'converting' && (
-        <div className="flex flex-col items-center gap-3">
-          <Spinner />
-          <p className="text-sm text-gray-600">Converting… this may take up to 30 seconds for large files.</p>
+      <header className="hdr anim-1">
+        <div className="wordmark">DyslexicReader</div>
+        <p className="hdr-tagline">
+          Convert any image or PDF into a comfortable,<br />
+          dyslexia-friendly document in seconds.
+        </p>
+        <div className="badges">
+          <span className="badge">Free</span>
+          <span className="badge">Private</span>
+          <span className="badge">No account needed</span>
         </div>
-      )}
+      </header>
 
-      {phase === 'done' && (
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="rounded-xl bg-green-600 px-8 py-3 text-white font-medium hover:bg-green-700 transition-colors"
-            >
-              Download PDF
-            </button>
-            <button
-              type="button"
-              onClick={handleViewInBrowser}
-              className="rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
-            >
-              View in Browser
-            </button>
+      <main className="main">
+
+        <div className="card anim-2">
+
+          <div className="card-section">
+            <div className="step-label">1 · Upload your file</div>
+            <FileUpload onFileSelected={setFile} disabled={locked} />
           </div>
-          <button
-            type="button"
-            onClick={handleReset}
-            className="text-sm text-gray-500 underline hover:text-gray-700"
-          >
-            Convert another file
-          </button>
-        </div>
-      )}
 
-      {phase === 'error' && (
-        <div className="flex flex-col items-center gap-3 max-w-sm text-center">
-          <p role="alert" className="text-sm text-red-600">{errorMsg}</p>
-          <button
-            type="button"
-            onClick={() => setPhase('idle')}
-            className="rounded-xl bg-blue-600 px-8 py-3 text-white font-medium hover:bg-blue-700 transition-colors"
-          >
-            Try again
-          </button>
+          <div className="card-section">
+            <div className="step-label">2 · Customize output</div>
+            <SettingsPanel settings={settings} onChange={update} disabled={locked} />
+          </div>
+
+          <div className="action-section">
+
+            {phase === 'idle' && (
+              <button
+                className="btn-convert"
+                onClick={handleConvert}
+                disabled={!file}
+              >
+                <span>Convert to PDF</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            {phase === 'converting' && (
+              <div className="state-converting">
+                <div className="spinner" aria-label="Converting" />
+                <span>Converting your document…</span>
+              </div>
+            )}
+
+            {phase === 'done' && (
+              <div className="state-done">
+                <div className="done-check" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="done-title">Your PDF is ready</div>
+                  <div className="done-filename">{fileNameRef.current}</div>
+                </div>
+                <div className="done-btns">
+                  <button className="btn-primary" onClick={handleDownload}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download
+                  </button>
+                  <button className="btn-secondary" onClick={handleViewInBrowser}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    View in browser
+                  </button>
+                </div>
+                <button className="link-reset" onClick={handleReset}>
+                  Convert another file
+                </button>
+              </div>
+            )}
+
+            {phase === 'error' && (
+              <div className="state-error">
+                <div className="error-icon" aria-hidden="true">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <p className="error-msg" role="alert">{errorMsg}</p>
+                <button className="btn-retry" onClick={handleReset}>Try again</button>
+              </div>
+            )}
+
+          </div>
         </div>
-      )}
-    </main>
+
+        <OpenDyslexicInfo />
+
+      </main>
+
+      <footer className="footer">
+        Files are processed in memory and never stored · No account required
+      </footer>
+
+    </div>
   )
 }
-
-function Spinner() {
-  return (
-    <svg
-      className="h-10 w-10 animate-spin text-blue-600"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-label="Loading"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-    </svg>
-  )
-}
-
-export default App
